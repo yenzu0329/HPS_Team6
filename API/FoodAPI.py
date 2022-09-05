@@ -4,7 +4,7 @@ import json
 import requests
 
 class Food:
-    def __init__(self,name,per,calories,fat,carbs,protein,url):
+    def __init__(self,name="",per=0,calories=0,fat=0,carbs=0,protein=0,url=""):
         self.name = name
         self.per = per #unit:g
         self.calories = calories #unit:kcal

@@ -5,6 +5,7 @@ import UserAPI
 import FoodAPI
 import BarcodeAPI
 import WeightAPI
+import RecognitionAPI
 import time
 
 class WelcomePage(QWidget):
@@ -369,18 +370,19 @@ class ScanPackagePage(QWidget):
         self.setLayout(self.layout)
 
     def jumpToLastPage(self):
-        if self.thread_is_running:
-            self.thread_is_running = False
+        self.thread_is_running = False
         var.backToLastPage()
         change_page.trigger()
 
     def jumpToEntryPage(self):
-        if self.thread_is_running:
-            self.thread_is_running = False
+        self.thread_is_running = False
         var.page.append("Enter Barcode")
         change_page.trigger()
 
     def openCamera(self):
+        var.food = None
+        self.detect_count = 0
+        self.detect_food_name = ''
         self.thread_is_running = True
         self.camera_thread.start()  # Start the thread
         time.sleep(0.1)
@@ -392,6 +394,16 @@ class ScanPackagePage(QWidget):
         converted_img = QImage(video_frame, width, height, bytes_per_line, QImage.Format_RGB888)
         converted_pixmap = QPixmap.fromImage(converted_img).scaled(self.camara_lbl.width(), self.camara_lbl.height(), Qt.KeepAspectRatioByExpanding)
         self.camara_lbl.setPixmap(converted_pixmap)
+        if var.food:
+            if var.food.name != self.detect_food_name:
+                self.detect_food_name = var.food.name
+                self.detect_count = 0
+            else:
+                self.detect_count += 1
+            if self.detect_count == 10:
+                self.thread_is_running = False
+                var.page.append("Show Food Info")
+                change_page.trigger()
 
     def invalidVideoFile(self):
         msg_window.setMsg("camera not found!")
@@ -407,10 +419,13 @@ class DetectFoodPage(ScanPackagePage):
         self.weight_lbl.setFont(QFont("Agency FB", font_normal_size))
         self.tare_btn = BlackBtn("TARE")
         self.tare_btn.setMinimumWidth(130)
+        self.detect_btn = BlackBtn("DETECT")
+        self.detect_btn.setMinimumWidth(150)
 
         self.h_box = QHBoxLayout()
         self.h_box.setSpacing(15)
         self.h_box.addItem(h_expander)
+        self.h_box.addWidget(self.detect_btn)
         self.h_box.addWidget(self.tare_btn)
         self.h_box.addWidget(self.weight_lbl)
 
@@ -418,19 +433,28 @@ class DetectFoodPage(ScanPackagePage):
         self.v_box.addLayout(self.h_box)
         self.v_box.addItem(v_expander)
         
+        self.ai_model = RecognitionAPI.load_model()
         self.tare_btn.clicked.connect(self.changeOffsetWeight)
+        self.detect_btn.clicked.connect(self.triggerDetection)
         self.offset = 0
+        self.detect_flag = False 
 
     def changeOffsetWeight(self):
         weight_lbl_text = self.weight_lbl.text()
         self.offset = int(weight_lbl_text.split()[0])
+    
+    def triggerDetection(self):
+        self.detect_flag = True
         
     def updateVideoFrames(self, video_frame: ndarray):
+        weight = WeightAPI.getWeight()-self.offset
+        self.weight_lbl.setText(str(weight)+" g ")
+        if weight > 0 or self.detect_flag:
+            var.food = RecognitionAPI.get_food_by_recognition(video_frame, self.ai_model)
+            self.detect_flag = False
+            if var.food:
+                print(var.food.name)
         super().updateVideoFrames(video_frame)
-        weight = WeightAPI.getWeight()
-        self.weight_lbl.setText(str(weight-self.offset)+" g ")
-        if weight > 0:
-            print('detect food') # TODO
 
     def jumpToEntryPage(self):
         var.page.append("Enter Food Name")
@@ -767,18 +791,19 @@ class ShowFoodInfoPage(QWidget):
     def setupFoodInfo(self):
         print(var.food.name,var.food.per,var.food.calories,var.food.fat,var.food.carbs,var.food.protein,var.food.url)
         self.food_name_lbl.setText(var.food.name)
-        self.cal_lbl.setText(str(var.food.calories)+' Kcal')
+        self.weight_line_edit.setText(str(var.food.per)+' g')
+        self.cal_lbl.setText(str(int(var.food.calories))+' Kcal')
         self.fat.setWeight(var.food.fat)
         self.carbs.setWeight(var.food.carbs)
         self.protein.setWeight(var.food.protein)
 
     def weightChange(self):
         weight = self.weight_line_edit.getWeight()
-        cal = int(var.food.calories * weight / 100)
+        cal = int(var.food.calories * weight / var.food.per)
         self.cal_lbl.setText(str(cal)+' Kcal')
-        self.fat.setWeight(round(var.food.fat * weight / 100, 2))
-        self.carbs.setWeight(round(var.food.carbs * weight / 100, 2))
-        self.protein.setWeight(round(var.food.protein * weight / 100, 2))
+        self.fat.setWeight(round(var.food.fat * weight / var.food.per, 2))
+        self.carbs.setWeight(round(var.food.carbs * weight / var.food.per, 2))
+        self.protein.setWeight(round(var.food.protein * weight / var.food.per, 2))
 
 class ShowDietPage(QWidget):
     def __init__(self):  
@@ -787,7 +812,7 @@ class ShowDietPage(QWidget):
         self.back_btn.clicked.connect(self.leavePage)
 
     def initializeUI(self):
-        self.user_name_lbl = QLabel("AAA")
+        self.user_name_lbl = QLabel("")
         self.user_name_lbl.setFont(QFont("Agency FB", int(font_normal_size*1.5)))
         
         self.black_bar = BlackBar()
@@ -976,7 +1001,10 @@ class EnterBarcodePage(EnterFoodNamePage):
 
     def searchFood(self):
         food_id = self.line_edit.text()
-        food_list = BarcodeAPI.getFoodName(food_id)
-        if food_list[0] != "Food not exist":
+        food_list = BarcodeAPI.listFoodName(food_id)
+        var.food_list = []
+        if food_list:
             self.showFoodList(food_list)
+            for food_name in food_list:
+                var.food_list.append(BarcodeAPI.getFoodByName(food_name))
             print(food_list)

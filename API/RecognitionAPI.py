@@ -1,12 +1,14 @@
-import cv2
+import cv2, os
 import numpy as np
+import FoodAPI
 from dbconnect import conncet
 import tflite_runtime.interpreter as tflite
 
 def load_model():
     model_name = "mobilenetv2_0901"
     # tf_lite_path = "{}/{}.tflite".format(dir,model_name)
-    tf_lite_path = "{}.tflite".format(model_name)
+    abspath = os.path.dirname(os.path.abspath(__file__))
+    tf_lite_path = abspath+"/{}.tflite".format(model_name)
 
     # # Load the TFLite model and allocate tensors.
     # interpreter = tf.lite.Interpreter(tf_lite_path)
@@ -28,17 +30,17 @@ def get_food_by_recognition(image,interpreter):
     sql = "SELECT per,calories,fat,carbs,protein FROM Recognition WHERE food_name=%s;"
     cursor.execute(sql,(classes_name))
     row = cursor.fetchone()
-    food = dict()
+    food = FoodAPI.Food()
     if row:
-        food["food_name"] = classes_name
-        food["per"] = row[0]
-        food["calories"] = row[1]
-        food["fat"] = row[2]
-        food["carbs"] = row[3]
-        food["protein"] = row[4]
+        print(row)
+        food.name = classes_name
+        food.per = row[0]
+        food.calories = row[1]
+        food.fat = row[2]
+        food.carbs = row[3]
+        food.protein = row[4]
         return food
     else:
-        print("food doesn't exist")
         return None
 
 def image_process_to_tensor(img):
@@ -72,7 +74,7 @@ def predict(input_tensor,interpreter,classes,threshold=0.55):
     else :
         return -1,classes[predicted_index],np.max(prediction_scores)
 
-# if __name__ == "__main__":
-#     img = cv2.imread("pizza.jpeg")
-#     model =load_model()
-#     print(get_food_by_recognition(img,model))
+if __name__ == "__main__":
+    img = cv2.imread("pizza.jpeg")
+    model = load_model()
+    print(get_food_by_recognition(img,model))

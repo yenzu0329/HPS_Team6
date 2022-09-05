@@ -68,7 +68,6 @@ style_sheet = """
         background-color: #FFC000;
         text-align: left;
         padding: 3px 10px;
-        font: 75 24pt "Agency FB";
     }
     QLineEdit:read-only {
         border:0px
@@ -82,7 +81,7 @@ style_sheet = """
     }
     QLabel#yellow_title{
         color: #FFC000;
-        font: 75 36pt "Agency FB";
+        font: 75 40pt "Agency FB";
     }
     QScrollArea {
         border: none;

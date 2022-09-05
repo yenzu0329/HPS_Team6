@@ -184,6 +184,7 @@ class LineEdit(QLineEdit):
     def __init__(self):
         super().__init__()
         self.setFocusPolicy(Qt.ClickFocus)
+        self.setFont(QFont("Agency FB", font_normal_size))
     def focusInEvent(self, event):
         super().focusInEvent(event)
         subprocess.run("onboard", shell=True)
@@ -322,9 +323,7 @@ class CameraThread(QThread):
                 if not valid:
                     break
                 if var.page[-1] == "Scan Package":
-                    frame, food_name = BarcodeAPI.detectBarcode(frame)
-                    if food_name != None: 
-                        print(food_name)
+                    frame = BarcodeAPI.detectBarcode(frame)
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 self.frame_data_updated.emit(frame)
                 time.sleep(0.03)

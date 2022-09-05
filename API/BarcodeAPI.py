@@ -1,30 +1,48 @@
 import cv2, os
 import numpy as np
 import FoodAPI
+import GlobalVar as var
 from dbconnect import conncet
 from numpy import ndarray
-from pyzbar.pyzbar import decode
 
 color = (0, 0, 255)
 
-def get_food_by_barcode(barcode):
+def getFoodByBarcode(barcode):
     db = conncet()
     cursor = db.cursor()
     sql = "SELECT food_name,weight,calories,fat,carbs,protein FROM Barcode WHERE barcode=%s;"
     cursor.execute(sql,(barcode))
     row = cursor.fetchone()
-    food = dict()
+    food = FoodAPI.Food()
     if row:
-        food["name"] = row[0]
-        food["weight"] = row[1]
-        food["calories"] = row[2]
-        food["fat"] = row[3]
-        food["carbs"] = row[4]
-        food["protein"] = row[5]
-        
+        print(row)
+        food.name = row[0]
+        food.per = row[1]
+        food.calories = row[2]
+        food.fat = row[3]
+        food.carbs = row[4]
+        food.protein = row[5]
         return food
     else:
-        print("barcode doesn't exist")
+        return None
+
+def getFoodByName(name):
+    db = conncet()
+    cursor = db.cursor()
+    sql = "SELECT food_name,weight,calories,fat,carbs,protein FROM Barcode WHERE food_name=%s;"
+    cursor.execute(sql,(name))
+    row = cursor.fetchone()
+    food = FoodAPI.Food()
+    if row:
+        print(row)
+        food.name = row[0]
+        food.per = row[1]
+        food.calories = row[2]
+        food.fat = row[3]
+        food.carbs = row[4]
+        food.protein = row[5]
+        return food
+    else:
         return None
 
 def createBarcode(barcode,food_name,weight):
@@ -57,7 +75,6 @@ def deleteBarcode(barcode):
     db.close()
     return result
 
-
 def updateBarcode(barcode,food_name,weight):
     result = True
     db = conncet()
@@ -73,42 +90,37 @@ def updateBarcode(barcode,food_name,weight):
     db.close()
     return result
 
+bardet = cv2.barcode_BarcodeDetector()
 def detectBarcode(frame: ndarray):
-    # do some pre-processing to make the bar-code readable.
-    frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    dens = np.sum(frame_gray, axis=0)
-    frame_gray = cv2.morphologyEx(frame_gray, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (1, 21)))
-    for idx, val in enumerate(dens):
-        if val < 10800:
-            frame_gray[:,idx] = 0
-    _, frame_gray = cv2.threshold(frame_gray, 128, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    #frame = cv2.cvtColor(frame_gray, cv2.COLOR_GRAY2RGB)
-    
-    for barcode in decode(frame):
-        barcode_number = barcode.data.decode('utf-8')
-        # get food name from mySQL
-        food_name = getFoodName(barcode_number)[0]
-        # add box and text around the barcode
-        rect = barcode.rect
-        top_left = (rect[0],rect[1])
-        left_bottom = (rect[0]+rect[2],rect[1]+rect[3])
-        frame = cv2.rectangle(frame, top_left, left_bottom, color, 5)
-        frame = cv2.putText(frame, food_name, (rect[0],rect[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
-        return frame, food_name
-    return frame, None
+    #  Detect and decode the barcode
+    var.food = None
+    ok, decoded_info, decoded_type, corners = bardet.detectAndDecode(frame)
+    # draw box and text around the barcode
+    if type(corners) != type(None):
+        frame = cv2.polylines(frame, np.int32(corners), 1, color, 3)
+        for i, barcode_num in enumerate(decoded_info):
+            food = getFoodByBarcode(barcode_num)
+            if food:
+                x_pos, y_pos = int(corners[i][1][0]), int(corners[i][1][1]-10)
+                frame = cv2.putText(frame, food.name, (x_pos, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+                var.food = food
+                return frame
+        print(decoded_info)
+    return frame
 
-def getFoodName(barcode):
+def listFoodName(barcode):
     db = conncet()
     cursor = db.cursor()
     sql = "SELECT food_name FROM Barcode WHERE barcode LIKE '" + barcode + "%';"
     cursor.execute(sql)
     row = cursor.fetchone()
     if not row:
-        return ["Food not exist"]
+        return None
     return row
 
 if __name__ == '__main__':
-    # img_file = ((os.path.dirname(os.path.abspath(__file__)))+'/test_img.jpg')
-    # img = cv2.imread(img_file)
-    print(get_food_by_barcode('test'))
-
+    img_file = ((os.path.dirname(os.path.abspath(__file__)))+'/test_img.jpg')
+    img = cv2.imread(img_file)
+    frame, food_name = detectBarcode(img)
+    print(food_name)
+    print(getFoodByBarcode('test'))
