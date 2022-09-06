@@ -64,6 +64,7 @@ user = User()
 user_list = []
 food_list = []
 food = None
+food_weight = 0
 page = ["Welcome"]
 back_flag = False
 create_new_account_flag = False

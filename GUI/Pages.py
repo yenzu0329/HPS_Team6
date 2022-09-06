@@ -381,6 +381,7 @@ class ScanPackagePage(QWidget):
 
     def openCamera(self):
         var.food = None
+        var.food_weight = 0
         self.detect_count = 0
         self.detect_food_name = ''
         self.thread_is_running = True
@@ -447,9 +448,9 @@ class DetectFoodPage(ScanPackagePage):
         self.detect_flag = True
         
     def updateVideoFrames(self, video_frame: ndarray):
-        weight = WeightAPI.getWeight()-self.offset
-        self.weight_lbl.setText(str(weight)+" g ")
-        if weight > 0 or self.detect_flag:
+        var.food_weight = WeightAPI.getWeight()-self.offset
+        self.weight_lbl.setText(str(var.food_weight)+" g ")
+        if var.food_weight > 0 or self.detect_flag:
             var.food = RecognitionAPI.get_food_by_recognition(video_frame, self.ai_model)
             self.detect_flag = False
             if var.food:
@@ -791,11 +792,15 @@ class ShowFoodInfoPage(QWidget):
     def setupFoodInfo(self):
         print(var.food.name,var.food.per,var.food.calories,var.food.fat,var.food.carbs,var.food.protein,var.food.url)
         self.food_name_lbl.setText(var.food.name)
-        self.weight_line_edit.setText(str(var.food.per)+' g')
         self.cal_lbl.setText(str(int(var.food.calories))+' Kcal')
         self.fat.setWeight(var.food.fat)
         self.carbs.setWeight(var.food.carbs)
         self.protein.setWeight(var.food.protein)
+        if var.food_weight != 0:
+            self.weight_line_edit.setText(str(var.food_weight)+' g')
+            self.weightChange()
+        else:
+            self.weight_line_edit.setText(str(var.food.per)+' g')
 
     def weightChange(self):
         weight = self.weight_line_edit.getWeight()
