@@ -439,7 +439,27 @@ class DetectFoodPage(ScanPackagePage):
         self.detect_btn.clicked.connect(self.triggerDetection)
         self.offset = 0
         self.detect_flag = False
-        self.weight_timer = 3
+
+        self.timer = QTimer(self)
+        self.timer.setInterval(500)
+        self.timer.timeout.connect(self.detectWeight)
+
+    def jumpToLastPage(self):
+        self.timer.stop()
+        super().jumpToLastPage()
+
+    def jumpToEntryPage(self):
+        self.timer.stop()
+        self.thread_is_running = False
+        var.page.append("Enter Food Name")
+        change_page.trigger()
+
+    def openCamera(self):
+        self.timer.start()
+        super().openCamera()
+
+    def detectWeight(self):
+        var.food_weight = WeightAPI.getWeight()-self.offset
 
     def changeOffsetWeight(self):
         weight_lbl_text = self.weight_lbl.text()
@@ -449,21 +469,14 @@ class DetectFoodPage(ScanPackagePage):
         self.detect_flag = True
         
     def updateVideoFrames(self, video_frame: ndarray):
-        if self.weight_timer == 0:
-            var.food_weight = WeightAPI.getWeight() - self.offset
-            self.weight_lbl.setText(str(var.food_weight)+" g ")
-            self.weight_timer = 3
+        self.weight_lbl.setText(str(var.food_weight)+" g ")
         if self.detect_flag:
             var.food = RecognitionAPI.get_food_by_recognition(video_frame, self.ai_model)
             self.detect_flag = False
             if var.food:
+                self.timer.stop()
                 print(var.food.name)
         super().updateVideoFrames(video_frame)
-        self.weight_timer -= 1
-
-    def jumpToEntryPage(self):
-        var.page.append("Enter Food Name")
-        change_page.trigger()
 
 class EnterInfoPage(ScanPackagePage):
     def __init__(self): 
