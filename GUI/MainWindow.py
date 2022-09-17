@@ -48,50 +48,45 @@ class MainWindow(QMainWindow):
     def changePage(self):
         if var.page[-1] == "Start":
             self.next_page = self.start_page
+            self.start_page.listUser()
         elif var.page[-1] == "Menu":
             self.next_page = self.menu_page
         elif var.page[-1] == "Sign In":
             self.next_page = self.sign_in_page
+            self.sign_in_page.clearUserName()
         elif var.page[-1] == "Scan Package":
             self.next_page = self.scan_package_page
         elif var.page[-1] == "Detect Food":
             self.next_page = self.detect_food_page
         elif var.page[-1] == "Enter Info":
             self.next_page = self.enter_info_page
-        elif var.page[-1] == "Show Food Info":
-            self.next_page = self.show_foodinfo_page
-        elif var.page[-1] == "Show Diet":
-            self.next_page = self.show_diet_page
-        elif var.page[-1] == "Enter Food Name":
-            self.next_page = self.enter_food_name
-        elif var.page[-1] == "Enter Barcode":
-            self.next_page = self.enter_barcode    
-        self.transition_anim.start(self)
-
-    def refreshPage(self):
-        if var.page[-1] == "Start":
-            self.start_page.listUser()
-        elif var.page[-1] == "Sign In":
-            self.sign_in_page.clearUserName()
-        elif var.page[-1] == "Scan Package":
-            self.scan_package_page.openCamera()
-        elif var.page[-1] == "Detect Food":
-            self.detect_food_page.openCamera()
-        elif var.page[-1] == "Enter Info":
             if var.create_new_account_flag:
                 self.enter_info_page.showEmptyPage()
             else:
                 self.enter_info_page.showUserInfo()
         elif var.page[-1] == "Show Food Info":
+            self.next_page = self.show_foodinfo_page
             self.show_foodinfo_page.setupFoodInfo()
         elif var.page[-1] == "Show Diet":
+            self.next_page = self.show_diet_page
             self.show_diet_page.setupDiet()
         elif var.page[-1] == "Enter Food Name":
+            self.next_page = self.enter_food_name
             if not var.back_flag:
                 self.enter_food_name.clearLineEdit()
         elif var.page[-1] == "Enter Barcode":
+            self.next_page = self.enter_barcode
             if not var.back_flag:
-                self.enter_barcode.clearLineEdit()
+                self.enter_barcode.clearLineEdit() 
+        self.transition_anim.start(self)
+
+    def refreshPage(self):
+        if var.page[-1] == "Scan Package":
+            self.scan_package_page.openCamera()
+        elif var.page[-1] == "Detect Food":
+            self.detect_food_page.openCamera()
+        var.back_flag = False
+        var.create_new_account_flag = False
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -155,11 +150,9 @@ class TransitionAnim(QLabel):
     
     def addOffset(self):
         if self.offset >= 600:
-            var.back_flag = False
-            var.create_new_account_flag = False
             self.timer.stop()
-            self.main_window.central_widget.setCurrentWidget(self.main_window.next_page)
             self.animate_finish.emit()
+            self.main_window.central_widget.setCurrentWidget(self.main_window.next_page)
         self.offset += 6
         self.update()
 
