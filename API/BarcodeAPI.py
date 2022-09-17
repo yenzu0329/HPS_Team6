@@ -113,10 +113,13 @@ def listFoodName(barcode):
     cursor = db.cursor()
     sql = "SELECT food_name FROM Barcode WHERE barcode LIKE '" + barcode + "%';"
     cursor.execute(sql)
-    row = cursor.fetchone()
+    row = cursor.fetchall()
+    food_names = []
+    for food_name in row:
+        food_names.append(food_name[0])
     if not row:
         return None
-    return row
+    return food_names
 
 if __name__ == '__main__':
     img_file = ((os.path.dirname(os.path.abspath(__file__)))+'/test_img.jpg')

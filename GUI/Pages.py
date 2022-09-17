@@ -474,7 +474,6 @@ class DetectFoodPage(ScanPackagePage):
         if self.detect_flag:
             var.food = RecognitionAPI.get_food_by_recognition(video_frame, self.ai_model)
             #var.food = RecognitionAPI_GCP.get_food_by_recognition(video_frame)
-            print(var.food)
             self.detect_flag = False
             if var.food:
                 self.timer.stop()

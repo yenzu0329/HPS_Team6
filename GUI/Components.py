@@ -320,12 +320,12 @@ class CameraThread(QThread):
         else:
             while self.parent.thread_is_running:
                 valid, frame = capture.read()
+                frame = cv2.flip(frame, -1)
                 if not valid:
                     break
                 if var.page[-1] == "Scan Package":
                     frame = BarcodeAPI.detectBarcode(frame)
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frame = cv2.flip(frame, -1)
                 self.frame_data_updated.emit(frame)
                 time.sleep(0.03)
         capture.release()

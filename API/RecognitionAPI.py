@@ -25,6 +25,8 @@ def get_food_by_recognition(image,interpreter):
         'french_fries', 'ice_cream', 'other', 'pizza', 'steak', 'sushi']
     tensor = image_process_to_tensor(image)
     prediction,classes_name,npmax = predict(tensor,interpreter,classes)
+    if classes_name == None or classes_name == 'other':
+        classes_name = 'Apple'
     db = conncet()
     cursor = db.cursor()
     sql = "SELECT per,calories,fat,carbs,protein FROM Recognition WHERE food_name=%s;"
