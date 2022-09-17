@@ -12,7 +12,6 @@
 2. 進入`1 System Options`
 3. 選擇 `Hostname` 更改好之後重新開機
 
-
 ---
 # Use cases
 
@@ -28,18 +27,10 @@
 ## Test plan(QA test)
 
 - UI是否有閃退的問題
-  - Linux service自動開起環境,service
+- Linux service自動開起環境
 - 秤重值是否能正確抓取
 - 螢幕觸控鍵盤是否能正常work
-- Barcode掃描問題???????????????(影像有晃動)
-  - 掃描失敗手動輸入
-  - Hector輸入後端Barcode Table’s data
+- Barcode掃描問題
+- 掃描失敗手動輸入
 
 ![](https://memecreator.org/static/images/memes/5201835.jpg)
-
-# Issues
-
-- 統一容器，api直接扣容器重量
-- 影像辨識API Input image:nparry, output name:String
-- 資料庫名稱大小寫是一樣的嗎
-- 外殼是否要有背蓋
