@@ -6,6 +6,7 @@ import FoodAPI
 import BarcodeAPI
 import WeightAPI
 import RecognitionAPI
+import RecognitionAPI_GCP
 import time
 
 class WelcomePage(QWidget):
@@ -472,6 +473,8 @@ class DetectFoodPage(ScanPackagePage):
         self.weight_lbl.setText(str(var.food_weight)+" g ")
         if self.detect_flag:
             var.food = RecognitionAPI.get_food_by_recognition(video_frame, self.ai_model)
+            #var.food = RecognitionAPI_GCP.get_food_by_recognition(video_frame)
+            print(var.food)
             self.detect_flag = False
             if var.food:
                 self.timer.stop()
