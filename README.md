@@ -34,3 +34,6 @@
 - 掃描失敗手動輸入
 
 ![](https://memecreator.org/static/images/memes/5201835.jpg)
+
+# Demo video
+https://www.youtube.com/watch?v=6truBIo4wFs
